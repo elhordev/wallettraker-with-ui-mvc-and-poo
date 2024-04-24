@@ -3,7 +3,7 @@ import time
 from tkinter import ttk
 from controller.realtime import urlcontent, scrapurl
 from resources.constants import TITLE, URL
-from controller.stocks import realtime
+from controller.stocks import realtime, StocksBuy
 
 
 class AppUi(tk.Tk):
@@ -67,11 +67,10 @@ class AppUi(tk.Tk):
         opcion_tobin = tk.BooleanVar()
 
         # Variables de control
-        control_opcion = tk.IntVar()
-        control_qty = tk.IntVar()
-        control_expense = tk.DoubleVar()
-        control_price = tk.DoubleVar()
-        control_index = tk.IntVar()
+        self.control_opcion = tk.IntVar()
+        self.control_qty = tk.IntVar()
+        self.control_expense = tk.DoubleVar()
+        self.control_price = tk.DoubleVar()
 
         # Creamos opciones dentro de frame.
         self.opcion_radio_tobin = tk.Checkbutton(frame_opciones, text='Tobin', font=('Terminal', 16),
@@ -94,16 +93,16 @@ class AppUi(tk.Tk):
         label_expense = tk.Label(frame_opciones, text='Gastos operacion: ', font=('Terminal', 16))
         label_price = tk.Label(frame_opciones, text='Precio valor: ', font=('Terminal', 16))
 
-        entry_stock = tk.Entry(frame_opciones, textvariable=control_opcion)
-        self.entry_qty = tk.Entry(frame_opciones, textvariable=control_qty)
-        self.entry_expense = tk.Entry(frame_opciones, textvariable=control_expense)
-        self.entry_price = tk.Entry(frame_opciones, textvariable=control_price)
+        self.entry_stock = tk.Entry(frame_opciones, textvariable=self.control_opcion)
+        self.entry_qty = tk.Entry(frame_opciones, textvariable=self.control_qty)
+        self.entry_expense = tk.Entry(frame_opciones, textvariable=self.control_expense)
+        self.entry_price = tk.Entry(frame_opciones, textvariable=self.control_price)
 
         self.boton_ejecutar = tk.Button(frame_opciones, text='Ejecutar', font=('Terminal', 14), bg='green'
-                                        )  # ,command=aniadir_compra
+                                        , command=StocksBuy.add_stock_to_wallet(StocksBuy, appui=self))
 
         label_stock.pack(padx=10, pady=5)
-        entry_stock.pack(padx=10, pady=5)
+        self.entry_stock.pack(padx=10, pady=5)
         label_info_stock.pack()
 
         label_price.pack(padx=10, pady=5)
@@ -210,3 +209,7 @@ class AppUi(tk.Tk):
 
         boton_cerrar = tk.Button(popup_error_entry, text='Entendido', command=popup_error_entry.destroy)
         boton_cerrar.pack()
+
+
+app = AppUi()
+app.mainloop()

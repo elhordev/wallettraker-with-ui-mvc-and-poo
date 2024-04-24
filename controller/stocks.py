@@ -1,5 +1,4 @@
 import tkinter as tk
-from main import app
 from model.wallet_manager import wallet
 
 realtime = []
@@ -37,19 +36,19 @@ class StocksBuy(Stocks):
         if self.tobin:
             self.tobin = f'{round(self.accountcharge * 0.002, 2)}€'
 
-    def add_stock_to_wallet(self):
+    def add_stock_to_wallet(self, appui):
 
         try:
-            buy = StocksBuy(stock=realtime[app.frame_label_sell_buy_opcions.control_opcion.get()][self.stock],
-                            buyprice=app.frame_label_sell_buy_opcions.control_price.get(),
-                            qty=app.frame_label_sell_buy_opcions.control_qty.get(),
-                            expense=app.frame_label_sell_buy_opcions.control_expense.get(),
-                            tobin=app.frame_label_sell_buy_opcions.opcion_tobin.get())
+            buy = StocksBuy(stock=realtime[appui.frame_label_sell_buy_opcions.control_opcion.get()][self.stock],
+                            buyprice=appui.frame_label_sell_buy_opcions.control_price.get(),
+                            qty=appui.frame_label_sell_buy_opcions.control_qty.get(),
+                            expense=appui.frame_label_sell_buy_opcions.control_expense.get(),
+                            tobin=appui.frame_label_sell_buy_opcions.opcion_tobin.get())
 
-            if app.frame_label_sell_buy_opcions.opcion_tobin.get():
+            if appui.frame_label_sell_buy_opcions.opcion_tobin.get():
                 StocksBuy.calcular_tobin()
 
             wallet.append(buy)
             print(wallet)
-        except tk.TclErrorl:
-            app.show_error_popup()
+        except tk.TclError:
+            appui.show_error_popup()

@@ -6,9 +6,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-from controller.stocks import Stocks
-
-
+from controller.stocks import Stocks, realtime
 
 
 def urlcontent(url):
