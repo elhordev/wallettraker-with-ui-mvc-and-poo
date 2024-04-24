@@ -1,3 +1,10 @@
+import tkinter as tk
+from main import app
+from model.wallet_manager import wallet
+
+realtime = []
+
+
 class Stocks:
     def __init__(self, stock: str, realtime_price: float, time: str, var: str, close: float, more_or_less: float):
         self.stock = stock
@@ -30,4 +37,19 @@ class StocksBuy(Stocks):
         if self.tobin:
             self.tobin = f'{round(self.accountcharge * 0.002, 2)}€'
 
+    def add_stock_to_wallet(self):
 
+        try:
+            buy = StocksBuy(stock=realtime[app.frame_label_sell_buy_opcions.control_opcion.get()][self.stock],
+                            buyprice=app.frame_label_sell_buy_opcions.control_price.get(),
+                            qty=app.frame_label_sell_buy_opcions.control_qty.get(),
+                            expense=app.frame_label_sell_buy_opcions.control_expense.get(),
+                            tobin=app.frame_label_sell_buy_opcions.opcion_tobin.get())
+
+            if app.frame_label_sell_buy_opcions.opcion_tobin.get():
+                StocksBuy.calcular_tobin()
+
+            wallet.append(buy)
+            print(wallet)
+        except tk.TclErrorl:
+            app.show_error_popup()

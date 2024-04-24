@@ -1,8 +1,9 @@
 import tkinter as tk
 import time
 from tkinter import ttk
-from controller.realtime import urlcontent, scrapurl, realtime
+from controller.realtime import urlcontent, scrapurl
 from resources.constants import TITLE, URL
+from controller.stocks import realtime
 
 
 class AppUi(tk.Tk):
@@ -23,6 +24,8 @@ class AppUi(tk.Tk):
         self.show_wallet_data()
         self.frame_label_sell_buy_opcions()
         self.clock_refresh()
+        self.color_boton()
+
     @staticmethod
     def show_tiempo_real():
         result = urlcontent(URL)
@@ -60,7 +63,7 @@ class AppUi(tk.Tk):
         frame_opciones.grid(row=1, column=1)
 
         # Variable de control para los Radiobutton de las opciones.
-        opcion = tk.StringVar(value='venta')
+        self.opcion = tk.StringVar(value='venta')
         opcion_tobin = tk.BooleanVar()
 
         # Variables de control
@@ -71,15 +74,16 @@ class AppUi(tk.Tk):
         control_index = tk.IntVar()
 
         # Creamos opciones dentro de frame.
-        opcion_radio_tobin = tk.Checkbutton(frame_opciones, text='Tobin', font=('Terminal', 16), variable=opcion_tobin)
-        opcion_venta = tk.Radiobutton(frame_opciones, text='Venta ', font=('Terminal', 16), variable=opcion,
-                                      value='venta'''',
-                                              command=color_boton''')
+        self.opcion_radio_tobin = tk.Checkbutton(frame_opciones, text='Tobin', font=('Terminal', 16),
+                                                 variable=opcion_tobin)
+        opcion_venta = tk.Radiobutton(frame_opciones, text='Venta ', font=('Terminal', 16), variable=self.opcion,
+                                      value='venta',
+                                      command=self.color_boton)
         opcion_venta.pack()
 
-        opcion_compra = tk.Radiobutton(frame_opciones, text='Compra ', font=('Terminal', 16), variable=opcion,
-                                       value='compra'''',
-                                               command=color_boton''')
+        opcion_compra = tk.Radiobutton(frame_opciones, text='Compra ', font=('Terminal', 16), variable=self.opcion,
+                                       value='compra',
+                                       command=self.color_boton)
         opcion_compra.pack()
 
         label_stock = tk.Label(frame_opciones, text='Valor: ', font=('Terminal', 16))
@@ -91,29 +95,29 @@ class AppUi(tk.Tk):
         label_price = tk.Label(frame_opciones, text='Precio valor: ', font=('Terminal', 16))
 
         entry_stock = tk.Entry(frame_opciones, textvariable=control_opcion)
-        entry_qty = tk.Entry(frame_opciones, textvariable=control_qty)
-        entry_expense = tk.Entry(frame_opciones, textvariable=control_expense)
-        entry_price = tk.Entry(frame_opciones, textvariable=control_price)
+        self.entry_qty = tk.Entry(frame_opciones, textvariable=control_qty)
+        self.entry_expense = tk.Entry(frame_opciones, textvariable=control_expense)
+        self.entry_price = tk.Entry(frame_opciones, textvariable=control_price)
 
-        boton_ejecutar = tk.Button(frame_opciones, text='Ejecutar', font=('Terminal', 14), bg='green'
-                                   )  # ,command=aniadir_compra
+        self.boton_ejecutar = tk.Button(frame_opciones, text='Ejecutar', font=('Terminal', 14), bg='green'
+                                        )  # ,command=aniadir_compra
 
         label_stock.pack(padx=10, pady=5)
         entry_stock.pack(padx=10, pady=5)
         label_info_stock.pack()
 
         label_price.pack(padx=10, pady=5)
-        entry_price.pack(padx=10, pady=5)
+        self.entry_price.pack(padx=10, pady=5)
 
         label_qty.pack(padx=10, pady=5)
-        entry_qty.pack(padx=10, pady=5)
+        self.entry_qty.pack(padx=10, pady=5)
 
         label_expense.pack(padx=10, pady=5)
-        entry_expense.pack(padx=10, pady=5)
+        self.entry_expense.pack(padx=10, pady=5)
 
-        opcion_radio_tobin.pack(padx=10, pady=5)
+        self.opcion_radio_tobin.pack(padx=10, pady=5)
 
-        boton_ejecutar.pack(padx=10, pady=5)
+        self.boton_ejecutar.pack(padx=10, pady=5)
 
     def scale_refresh_rate(self):
         # Creamos un tk.scale para controlar la actualizacion.
@@ -176,7 +180,33 @@ class AppUi(tk.Tk):
 
         self.after(1000, self.clock_refresh)
 
+    def color_boton(self):
+        if self.opcion.get() == 'venta':
+            self.boton_ejecutar.config(bg='green')  #, command=aniadir_venta)
+            self.entry_qty.config(state='disabled')
+            self.entry_price.config(state='disabled')
+            self.entry_expense.config(state='disabled')
+            self.opcion_radio_tobin.config(state='disabled')
+            # print(realtime)
+        elif self.opcion.get() == 'compra':
+            self.boton_ejecutar.config(bg='red')  #, command=aniadir_compra)
+            self.entry_qty.config(state='normal')
+            self.entry_price.config(state='normal')
+            self.entry_expense.config(state='normal')
+            self.opcion_radio_tobin.config(state='normal')
 
-app = AppUi()
+    def show_pop_up_error(self):
+        popup_error_entry = tk.Toplevel(self)
+        popup_error_entry.title('Error')
+        popup_error_entry.geometry('600x450')
 
-app.mainloop()
+        label_error = tk.Label(popup_error_entry, text='\n\nError al Introducir datos, recuerda que:\n\n-Valor son '
+                                                       'enteros.\n\n- Cantidad son'
+                                                       'enteros.\n\n- Gastos pueden ser decimales, usando el '
+                                                       'punto.\n\n- Precio igual que'
+                                                       'gastos.\n\n')
+        label_error.config(font=('Terminal', 15))
+        label_error.pack()
+
+        boton_cerrar = tk.Button(popup_error_entry, text='Entendido', command=popup_error_entry.destroy)
+        boton_cerrar.pack()
