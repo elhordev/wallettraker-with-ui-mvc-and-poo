@@ -36,19 +36,25 @@ class StocksBuy(Stocks):
         if self.tobin:
             self.tobin = f'{round(self.accountcharge * 0.002, 2)}€'
 
-    def add_stock_to_wallet(self, appui):
-
+    @staticmethod
+    def add_stock_to_wallet(app):
+        print('Miau')
         try:
-            buy = StocksBuy(stock=realtime[appui.frame_label_sell_buy_opcions.control_opcion.get()][self.stock],
-                            buyprice=appui.frame_label_sell_buy_opcions.control_price.get(),
-                            qty=appui.frame_label_sell_buy_opcions.control_qty.get(),
-                            expense=appui.frame_label_sell_buy_opcions.control_expense.get(),
-                            tobin=appui.frame_label_sell_buy_opcions.opcion_tobin.get())
+            stock_position = realtime[app.option_control.get()]
+            buy = StocksBuy(stock=stock_position.stock,
+                            buyprice=app.price_control.get(),
+                            qty=app.qty_control.get(),
+                            expense=app.expense_control.get(),
+                            tobin=app.tobin_option.get())
 
-            if appui.frame_label_sell_buy_opcions.opcion_tobin.get():
-                StocksBuy.calcular_tobin()
+            if app.tobin_option.get():
+                buy.calcular_tobin()
 
             wallet.append(buy)
-            print(wallet)
+            print(wallet[0])
         except tk.TclError:
-            appui.show_error_popup()
+            app.show_popup_error()
+
+    @staticmethod
+    def add_sell(app):
+        print('Guau')

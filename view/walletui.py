@@ -1,108 +1,124 @@
+import os
 import tkinter as tk
 import time
 from tkinter import ttk
+
+from PIL import Image, ImageTk
+
 from controller.realtime import urlcontent, scrapurl
-from resources.constants import TITLE, URL
+from resources.constants import TITLE, URL, PATH_ERROR_IMAGE
 from controller.stocks import realtime, StocksBuy
+from model.wallet_manager import wallet
 
 
+# TO DO:
+#Pintar el balance ,calculandolo antes de insertarlo en la tabla ttk del wallet.
+#Aniadir un indice al tiempo real para la compra.
 class AppUi(tk.Tk):
 
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk",
                  useTk: bool = True, sync: bool = False, use: str | None = None) -> None:
         super().__init__(screenName, baseName, className, useTk, sync, use)
 
-        # Configuracion de la ventana Root.
+        # Root window setup.
+
         self.title('WallettrakerUI by elhor')
         self.geometry('1920x1080')
         self.resizable(False, False)
 
-        self.menu_bar()
-        self.mostrar_datos_tabulares()
-        self.scale_refresh_rate()
-        self.frame_label()
+        # Create the frames.
+        superior_frame = tk.Frame(self)
+        option_frame = tk.Frame(self)
+        # Create control variables.
+        self.execute_button = tk.Button(option_frame, text='Ejecutar', font=('Terminal', 14), bg='green',
+                                        command=None)
+
+        self.option = tk.StringVar(value='sell')
+        self.refresh_var_control = tk.IntVar(value=20)
+        self.clock = tk.Label(superior_frame, text='')
+        self.option_control = tk.IntVar()
+        self.qty_control = tk.IntVar()
+        self.expense_control = tk.DoubleVar()
+        self.price_control = tk.DoubleVar()
+        index_control = tk.IntVar()
+        self.tobin_option = tk.BooleanVar()
+        self.entry_qty = tk.Entry(option_frame, textvariable=self.qty_control)
+        self.entry_expense = tk.Entry(option_frame, textvariable=self.expense_control)
+        self.entry_price = tk.Entry(option_frame, textvariable=self.price_control)
+        self.option_radio_tobin = tk.Checkbutton(option_frame, text='Tobin', font=('Terminal', 16),
+                                                 variable=self.tobin_option)
+        # Initializing functions on the instance.
+
+        self.button_color()
+        self.show_market_data()
         self.show_wallet_data()
-        self.frame_label_sell_buy_opcions()
         self.clock_refresh()
-        self.color_boton()
 
-    @staticmethod
-    def show_tiempo_real():
-        result = urlcontent(URL)
-        scrapurl(result)
+        # Creating MenuBar
 
-    def menu_bar(self):
-        # Crear la barra de menu.
         menu_bar = tk.Menu(self)
 
-        # Creamos menu archivo
-        archivo_menu = tk.Menu(menu_bar, tearoff=False)
-        archivo_menu.add_command(label='Cargar cartera')
-        archivo_menu.add_command(label='Guardar cartera')
-        archivo_menu.add_separator()
-        archivo_menu.add_command(label='Salir', command=self.quit)
+        # Creating File menu
 
-        # Agregar el menu archivo a la barra_menu
-        menu_bar.add_cascade(label='Archivo', menu=archivo_menu)
+        file_menu = tk.Menu(menu_bar, tearoff=False)
+        file_menu.add_command(label='Load Wallet')
+        file_menu.add_command(label='Save Wallet')
+        file_menu.add_separator()
+        file_menu.add_command(label='Exit', command=self.quit)
+
+        # Add File menu to Menu Bar
+
+        menu_bar.add_cascade(label='File', menu=file_menu)
         self.config(menu=menu_bar)
 
-    def frame_label(self):
-        # Creamos frame para el label y el reloj
-        frame_superior = tk.Frame(self)
+        # Creating the frame for the label and the clock
 
-        # Creamos el label.
-        cabecera = tk.Label(frame_superior, text=TITLE)
-        cabecera.config(font=('Terminal', 25))
-        cabecera.grid(row=0, column=0)
+        superior_frame.grid(row=0, column=0)
+        # Create the label
 
-        frame_superior.grid(row=0, column=0)
+        header = tk.Label(superior_frame, text=TITLE)
+        header.config(font=('Terminal', 25))
+        header.grid(row=0, column=0)
 
-    def frame_label_sell_buy_opcions(self):
-        # Creamos frame para opciones de compra y venta.
-        frame_opciones = tk.Frame(self)
-        frame_opciones.grid(row=1, column=1)
+        # Create the clock label
 
-        # Variable de control para los Radiobutton de las opciones.
-        self.opcion = tk.StringVar(value='venta')
-        opcion_tobin = tk.BooleanVar()
+        self.clock.grid(row=0, column=1, columnspan=1)
 
-        # Variables de control
-        self.control_opcion = tk.IntVar()
-        self.control_qty = tk.IntVar()
-        self.control_expense = tk.DoubleVar()
-        self.control_price = tk.DoubleVar()
+        # Create the option frame and sell/buy
 
-        # Creamos opciones dentro de frame.
-        self.opcion_radio_tobin = tk.Checkbutton(frame_opciones, text='Tobin', font=('Terminal', 16),
-                                                 variable=opcion_tobin)
-        opcion_venta = tk.Radiobutton(frame_opciones, text='Venta ', font=('Terminal', 16), variable=self.opcion,
-                                      value='venta',
-                                      command=self.color_boton)
-        opcion_venta.pack()
+        option_frame.grid(row=1, column=1)
 
-        opcion_compra = tk.Radiobutton(frame_opciones, text='Compra ', font=('Terminal', 16), variable=self.opcion,
-                                       value='compra',
-                                       command=self.color_boton)
-        opcion_compra.pack()
+        # Create label for refresh control.
 
-        label_stock = tk.Label(frame_opciones, text='Valor: ', font=('Terminal', 16))
-        label_info_stock = tk.Label(frame_opciones,
-                                    text='*Recuerda que para una venta,\n tienes que poner el indice de tu wallet.',
-                                    font=('Terminal', 7))
-        label_qty = tk.Label(frame_opciones, text='Cantidad: ', font=('Terminal', 16))
-        label_expense = tk.Label(frame_opciones, text='Gastos operacion: ', font=('Terminal', 16))
-        label_price = tk.Label(frame_opciones, text='Precio valor: ', font=('Terminal', 16))
+        label_slide = tk.Label(option_frame, text='\n\nFrecuencia de actualizacion', font=('Terminal', 10))
+        label_info_slide = tk.Label(option_frame, text='Seconds', font=('Terminal', 8))
+        slide = tk.Scale(option_frame, from_=3, to=29, orient='horizontal',
+                         resolution=1, variable=self.refresh_var_control,
+                         command=self.conn_refresh, sliderlength=10)
 
-        self.entry_stock = tk.Entry(frame_opciones, textvariable=self.control_opcion)
-        self.entry_qty = tk.Entry(frame_opciones, textvariable=self.control_qty)
-        self.entry_expense = tk.Entry(frame_opciones, textvariable=self.control_expense)
-        self.entry_price = tk.Entry(frame_opciones, textvariable=self.control_price)
+        # Create options inside the frame.
 
-        self.boton_ejecutar = tk.Button(frame_opciones, text='Ejecutar', font=('Terminal', 14), bg='green'
-                                        , command=StocksBuy.add_stock_to_wallet(StocksBuy, appui=self))
+        sell_option = tk.Radiobutton(option_frame, text='Sell', font=('Terminal', 16),
+                                     variable=self.option, value='sell',
+                                     command=self.button_color)
+        sell_option.pack()
+
+        buy_option = tk.Radiobutton(option_frame, text='Buy', font=('Terminal', 16),
+                                    variable=self.option, value='buy',
+                                    command=self.button_color)
+        buy_option.pack()
+
+        label_stock = tk.Label(option_frame, text='Stock: ', font=('Terminal', 16))
+        label_info_stock = tk.Label(option_frame, text='Recuerda que para una venta, \n tienes que poner el indice de '
+                                                       'tu wallet.', font=('Terminal', 7))
+
+        label_qty = tk.Label(option_frame, text='Cantidad: ', font=('Terminal', 16))
+        label_expense = tk.Label(option_frame, text='Gastos operacion: ', font=('Terminal', 16))
+        label_price = tk.Label(option_frame, text='Precio valor: ', font=('Terminal', 16))
+        entry_stock = tk.Entry(option_frame, textvariable=self.option_control)
 
         label_stock.pack(padx=10, pady=5)
-        self.entry_stock.pack(padx=10, pady=5)
+        entry_stock.pack(padx=10, pady=5)
         label_info_stock.pack()
 
         label_price.pack(padx=10, pady=5)
@@ -114,38 +130,43 @@ class AppUi(tk.Tk):
         label_expense.pack(padx=10, pady=5)
         self.entry_expense.pack(padx=10, pady=5)
 
-        self.opcion_radio_tobin.pack(padx=10, pady=5)
+        self.option_radio_tobin.pack(padx=10, pady=5)
 
-        self.boton_ejecutar.pack(padx=10, pady=5)
+        self.execute_button.pack(padx=10, pady=5)
 
-    def scale_refresh_rate(self):
-        # Creamos un tk.scale para controlar la actualizacion.
-        frame_scale = tk.Frame(self)
-        frame_scale.grid(row=2, column=1)
-
-        freq_actualizacion_var_control = tk.IntVar(value=10)
-
-        label_slide = tk.Label(frame_scale, text='\n\nFrecuencia de actualizacion', font=('Terminal', 10))
-        label_bajo_slide = tk.Label(frame_scale, text='Segundos', font=('Terminal', 8))
-        slide = tk.Scale(frame_scale, from_=3, to=20, orient='horizontal', resolution=1,
-                         variable=freq_actualizacion_var_control, sliderlength=10)  # command=control_freq_actualizacion
-        '''
         label_slide.pack()
         slide.pack()
-        label_bajo_slide.pack()
-        '''
+        label_info_slide.pack()
 
-    def show_wallet_data(self):
+    def clock_refresh(self):
+        self.clock.config(text=time.strftime('\t%H:%M:%S'), font=('Terminal', 25))
+        self.after(1000, self.clock_refresh)
 
-        # Creamos tabla de wallet.
-        wallet_tabular = ttk.Treeview(self, height=35)
-        wallet_tabular.grid(row=3, column=0)
+    def conn_refresh(self, value):
+        self.refresh_var_control.set(value)
+        print(self.refresh_var_control.get())
 
-        # Label wallet
-        label_wallet = tk.Label(self, text='Wallet Personal', font=('Terminal', 20))
-        label_wallet.grid(row=2, column=0)
+    def button_color(self):
+        if self.option.get() == 'sell':
+            self.execute_button.config(bg='green', command=lambda: StocksBuy.add_sell(self))
+            self.entry_qty.config(state='disabled')
+            self.entry_price.config(state='disabled')
+            self.entry_expense.config(state='disabled')
+            self.option_radio_tobin.config(state='disabled')
 
-    def mostrar_datos_tabulares(self):
+        elif self.option.get() == 'buy':
+            self.execute_button.config(bg='red', command=lambda: StocksBuy.add_stock_to_wallet(self))
+            self.entry_qty.config(state='normal')
+            self.entry_price.config(state='normal')
+            self.entry_expense.config(state='normal')
+            self.option_radio_tobin.config(state='normal')
+
+    @staticmethod
+    def show_tiempo_real():
+        result = urlcontent(URL)
+        scrapurl(result)
+
+    def show_market_data(self):
         # Creamos tabla.
         self.show_tiempo_real()
 
@@ -164,52 +185,55 @@ class AppUi(tk.Tk):
         for stock in realtime:
             realtime_tabular.insert('', 'end', values=(stock.stock, stock.realtime_price, stock.time,
                                                        stock.var, stock.close, stock.more_or_less))
-        print('Actualizando tiempo real cada 5 segundos')
+        print('Actualizando tiempo real cada {} segundos'.format(self.refresh_var_control.get()))
 
-        self.after(5000, func=self.mostrar_datos_tabulares)
+        self.after(self.refresh_var_control.get() * 1000, func=self.show_market_data)
 
-    def clock_refresh(self):
-        # Creamos el label para el reloj.
-        # Con su actualizacion
-        clock_frame = tk.Frame()
-        clock_frame.grid(row=0, column=1)
-        clock = tk.Label(clock_frame, text='')
-        clock.grid(row=0, column=1, columnspan=1)
-        clock.config(text=time.strftime('\t%H:%M:%S'), font=('Terminal', 25))
+    def show_wallet_data(self):
+        # Creamos tabla de wallet.
+        wallet_tabular = ttk.Treeview(self, height=35)
+        wallet_tabular.grid(row=3, column=0)
 
-        self.after(1000, self.clock_refresh)
+        # Label wallet
+        label_wallet = tk.Label(self, text='Wallet Personal', font=('Terminal', 20))
+        label_wallet.grid(row=2, column=0)
 
-    def color_boton(self):
-        if self.opcion.get() == 'venta':
-            self.boton_ejecutar.config(bg='green')  #, command=aniadir_venta)
-            self.entry_qty.config(state='disabled')
-            self.entry_price.config(state='disabled')
-            self.entry_expense.config(state='disabled')
-            self.opcion_radio_tobin.config(state='disabled')
-            # print(realtime)
-        elif self.opcion.get() == 'compra':
-            self.boton_ejecutar.config(bg='red')  #, command=aniadir_compra)
-            self.entry_qty.config(state='normal')
-            self.entry_price.config(state='normal')
-            self.entry_expense.config(state='normal')
-            self.opcion_radio_tobin.config(state='normal')
+        columns = ['Stock', 'Buy Price', 'Qty', 'Expense', 'Tobin', 'Balance', 'Account Charge']
+        wallet_tabular['columns'] = columns
 
-    def show_pop_up_error(self):
+        for col in columns:
+            wallet_tabular.column(col, anchor='center')
+            wallet_tabular.heading(col, text=col)
+
+        for item in wallet_tabular.get_children():
+            wallet_tabular.delete(item)
+
+        for buy in wallet:
+            wallet_tabular.insert('', 'end', values=(
+                buy.stock, buy.buyprice, buy.qty, buy.expense, buy.tobin, buy.balance, buy.accountcharge))
+        self.after(self.refresh_var_control.get() * 1000, func=self.show_wallet_data)
+
+    def show_popup_error(self):
         popup_error_entry = tk.Toplevel(self)
         popup_error_entry.title('Error')
         popup_error_entry.geometry('600x450')
 
-        label_error = tk.Label(popup_error_entry, text='\n\nError al Introducir datos, recuerda que:\n\n-Valor son '
-                                                       'enteros.\n\n- Cantidad son'
-                                                       'enteros.\n\n- Gastos pueden ser decimales, usando el '
-                                                       'punto.\n\n- Precio igual que'
-                                                       'gastos.\n\n')
+        if os.path.exists(PATH_ERROR_IMAGE):
+            image = Image.open(PATH_ERROR_IMAGE)
+            image_tk = ImageTk.PhotoImage(image)
+            image_label = tk.Label(popup_error_entry, image=image_tk, anchor=tk.CENTER)
+            image_label.pack()
+
+        else:
+            print('Error: Image file don''t found on the directory')
+
+        label_error = tk.Label(popup_error_entry,
+                               text='\n\nError al Introducir datos, recuerda que:\n\n-Valor son enteros.\n\n- '
+                                    'Cantidad son'
+                                    'enteros.\n\n- Gastos pueden ser decimales, usando el punto.\n\n- Precio igual que '
+                                    'gastos.\n\n')
         label_error.config(font=('Terminal', 15))
         label_error.pack()
 
-        boton_cerrar = tk.Button(popup_error_entry, text='Entendido', command=popup_error_entry.destroy)
+        boton_cerrar = tk.Button(popup_error_entry, text='OK', command=popup_error_entry.destroy)
         boton_cerrar.pack()
-
-
-app = AppUi()
-app.mainloop()
