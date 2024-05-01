@@ -1,19 +1,21 @@
 import os
 import tkinter as tk
 import time
-from tkinter import ttk
+from tkinter import ttk, filedialog
+
 
 from PIL import Image, ImageTk
 
 from controller.realtime import urlcontent, scrapurl
 from resources.constants import TITLE, URL, PATH_ERROR_IMAGE
 from controller.stocks import realtime, StocksBuy
-from model.wallet_manager import wallet
+from model.wallet_manager import wallet, upload_wallet, save_wallet
 
 
 # TO DO:
-#Pintar el balance ,calculandolo antes de insertarlo en la tabla ttk del wallet.
-#Aniadir un indice al tiempo real para la compra.
+# Pintar el balance ,calculandolo antes de insertarlo en la tabla ttk del wallet.
+# Aniadir un indice al tiempo real para la compra.
+# Crear un popup error en caso de salirme del rango de la lista de compra
 class AppUi(tk.Tk):
 
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk",
@@ -61,8 +63,8 @@ class AppUi(tk.Tk):
         # Creating File menu
 
         file_menu = tk.Menu(menu_bar, tearoff=False)
-        file_menu.add_command(label='Load Wallet')
-        file_menu.add_command(label='Save Wallet')
+        file_menu.add_command(label='Load Wallet',command=self.open_file)
+        file_menu.add_command(label='Save Wallet',command=self.save_file)
         file_menu.add_separator()
         file_menu.add_command(label='Exit', command=self.quit)
 
@@ -146,6 +148,29 @@ class AppUi(tk.Tk):
         self.refresh_var_control.set(value)
         print(self.refresh_var_control.get())
 
+    def show_pop_up_sell(self):
+        pop_up_sell = tk.Toplevel(self)
+        pop_up_sell.title('Sell')
+        pop_up_sell.geometry('250x80')
+
+        sell_label = tk.Label(pop_up_sell, text='Successfully sale!!\n')
+        close_button = tk.Button(pop_up_sell, text='Close', command=pop_up_sell.destroy)
+
+        sell_label.pack()
+        close_button.pack()
+
+    def show_pop_up_buy(self):
+
+        pop_up_buy = tk.Toplevel(self)
+        pop_up_buy.title('Buy')
+        pop_up_buy.geometry('250x80')
+
+        sell_label = tk.Label(pop_up_buy, text='Successfully Buy!!\n')
+        close_button = tk.Button(pop_up_buy, text='Close', command=pop_up_buy.destroy)
+
+        sell_label.pack()
+        close_button.pack()
+
     def button_color(self):
         if self.option.get() == 'sell':
             self.execute_button.config(bg='green', command=lambda: StocksBuy.add_sell(self))
@@ -170,7 +195,7 @@ class AppUi(tk.Tk):
         # Creamos tabla.
         self.show_tiempo_real()
 
-        columns = ['Stock', 'Precio', 'Hora', 'Var', 'Close', 'Differencia']
+        columns = ['Index', 'Stock', 'Price', 'Time', 'Var', 'Close', 'Difference']
         realtime_tabular = ttk.Treeview(self, height=35)
         realtime_tabular.grid(row=1, column=0)
         realtime_tabular['columns'] = columns
@@ -181,15 +206,16 @@ class AppUi(tk.Tk):
 
         for item in realtime_tabular.get_children():
             realtime_tabular.delete(item)
-
+        realtime_tabular.column('#0', width=0)
         for stock in realtime:
-            realtime_tabular.insert('', 'end', values=(stock.stock, stock.realtime_price, stock.time,
+            realtime_tabular.insert('', 'end', values=(stock.index, stock.stock, stock.realtime_price, stock.time,
                                                        stock.var, stock.close, stock.more_or_less))
         print('Actualizando tiempo real cada {} segundos'.format(self.refresh_var_control.get()))
 
         self.after(self.refresh_var_control.get() * 1000, func=self.show_market_data)
 
     def show_wallet_data(self):
+        index_wallet = -1
         # Creamos tabla de wallet.
         wallet_tabular = ttk.Treeview(self, height=35)
         wallet_tabular.grid(row=3, column=0)
@@ -198,9 +224,9 @@ class AppUi(tk.Tk):
         label_wallet = tk.Label(self, text='Wallet Personal', font=('Terminal', 20))
         label_wallet.grid(row=2, column=0)
 
-        columns = ['Stock', 'Buy Price', 'Qty', 'Expense', 'Tobin', 'Balance', 'Account Charge']
+        columns = ['Index', 'Stock', 'Buy Price', 'Qty', 'Expense', 'Tobin', 'Balance', 'Account Charge']
         wallet_tabular['columns'] = columns
-
+        wallet_tabular.column('#0', width=0)
         for col in columns:
             wallet_tabular.column(col, anchor='center')
             wallet_tabular.heading(col, text=col)
@@ -209,11 +235,17 @@ class AppUi(tk.Tk):
             wallet_tabular.delete(item)
 
         for buy in wallet:
-            wallet_tabular.insert('', 'end', values=(
-                buy.stock, buy.buyprice, buy.qty, buy.expense, buy.tobin, buy.balance, buy.accountcharge))
+            index_wallet += 1
+            buy.index = index_wallet
+            for stock in realtime:
+                if stock.stock == buy.stock:
+                    buy.balance = '{}'.format(round((stock.realtime_price * buy.qty) - buy.accountcharge), 2)
+            wallet_tabular.insert('', 'end', values=(buy.index,
+                                                     buy.stock, buy.buyprice, buy.qty, buy.expense, buy.tobin,
+                                                     buy.balance, buy.accountcharge))
         self.after(self.refresh_var_control.get() * 1000, func=self.show_wallet_data)
 
-    def show_popup_error(self):
+    def show_pop_up_error(self):
         popup_error_entry = tk.Toplevel(self)
         popup_error_entry.title('Error')
         popup_error_entry.geometry('600x450')
@@ -237,3 +269,48 @@ class AppUi(tk.Tk):
 
         boton_cerrar = tk.Button(popup_error_entry, text='OK', command=popup_error_entry.destroy)
         boton_cerrar.pack()
+
+    def show_pop_up_error_range(self):
+
+        popup_error_entry = tk.Toplevel(self)
+        popup_error_entry.title('Error')
+        popup_error_entry.geometry('400x350')
+
+        if os.path.exists(PATH_ERROR_IMAGE):
+            image = Image.open(PATH_ERROR_IMAGE)
+            image_tk = ImageTk.PhotoImage(image)
+            image_label = tk.Label(popup_error_entry, image=image_tk, anchor=tk.CENTER)
+            image_label.pack()
+
+        else:
+            print('Error: Image file don''t found on the directory')
+
+        label_error = tk.Label(popup_error_entry,
+                               text=f'Stock entry out\n of range, you have to\nselect from 0 to {len(realtime)}\n')
+        label_error.config(font=('Terminal', 15))
+        label_error.pack()
+
+        boton_cerrar = tk.Button(popup_error_entry, text='OK', command=popup_error_entry.destroy)
+        boton_cerrar.pack()
+
+
+    def open_file(self):
+
+        file = filedialog.askopenfile('r',filetypes=[('CSV files','*.csv')])
+        upload_wallet(file=file)
+
+    def save_file(self):
+        save_window = tk.Toplevel(self)
+        save_window.title('Guardado')
+        save_window.geometry('400x350')
+        save_label = tk.Label(save_window, text='\n Do you want to save your wallet?\nWith which name?\n')
+        save_entry = tk.Entry(save_window)
+        save_label.pack()
+        save_button = tk.Button(save_window, text='Ok', command=lambda: save_wallet(save_entry.get()))
+        save_entry.pack()
+        save_button.pack()
+
+
+
+        
+        

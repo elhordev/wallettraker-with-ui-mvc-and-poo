@@ -24,6 +24,7 @@ def scrapurl(web):
     more_or_less_scrap = url_content.find_all(class_="tv-change-abs")
 
     stocks_names = [stock.text.strip() for stock in acc_scrap]
+    indexes = [n for n in range(len(stocks_names))]
     prices_stocks = [float(price.text.strip().replace(',', '.')) for price in price_scrap
                      if '\nPrecio\n' not in price.text]
     time_stocks = [time.text.strip() for time in time_scrap if "\nÚLTIMA ACTUALIZACIÓN\n" not in time.text]
@@ -32,7 +33,8 @@ def scrapurl(web):
     var_stocks = [var.text.strip() for var in var_scrap if "\n%\n" not in var.text]
     diff_stock = [diff.text.strip() for diff in more_or_less_scrap if "\n+/-" not in diff.text]
 
-    for stock, prices, time, close, var, diff in zip(stocks_names, prices_stocks, time_stocks, close_stocks, var_stocks,
-                                                     diff_stock):
-        new_stock = Stocks(stock, prices, time, close, var, diff)
+    for stock, prices, time, close, var, diff, index in zip(stocks_names, prices_stocks, time_stocks, close_stocks,
+                                                            var_stocks, diff_stock, indexes):
+        new_stock = Stocks(stock, prices, time, close, var, diff, index)
         realtime.append(new_stock)
+        print(new_stock.index, new_stock.stock)

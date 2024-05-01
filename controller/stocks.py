@@ -5,13 +5,15 @@ realtime = []
 
 
 class Stocks:
-    def __init__(self, stock: str, realtime_price: float, time: str, var: str, close: float, more_or_less: float):
+    def __init__(self, stock: str, realtime_price: float, time: str, var: str, close: float, more_or_less: float
+                 , index: int):
         self.stock = stock
         self.realtime_price = realtime_price
         self.time = time
         self.var = var
         self.close = close
         self.more_or_less = more_or_less
+        self.index = index
 
     def __str__(self):
         return f'Cargando {self.stock} at {self.time}'
@@ -19,7 +21,7 @@ class Stocks:
 
 class StocksBuy(Stocks):
     def __init__(self, stock: str, buyprice: float, qty: int, expense: float, tobin: bool):
-        super().__init__(stock, None, None, None, None, None)
+        super().__init__(stock, None, None, None, None, None, 0)
 
         self.buyprice = buyprice
         self.qty = qty
@@ -51,10 +53,17 @@ class StocksBuy(Stocks):
                 buy.calcular_tobin()
 
             wallet.append(buy)
-            print(wallet[0])
+            app.show_pop_up_buy()
         except tk.TclError:
-            app.show_popup_error()
+            app.show_pop_up_error()
+        except IndexError:
+            app.show_pop_up_error_range()
 
     @staticmethod
     def add_sell(app):
-        print('Guau')
+        try:
+            delete_wallet = app.option_control.get()
+            wallet.pop(delete_wallet)
+            app.show_pop_up_sell()
+        except IndexError:
+            app.show_pop_up_error()
