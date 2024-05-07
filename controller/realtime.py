@@ -37,4 +37,4 @@ def scrapurl(web):
                                                             var_stocks, diff_stock, indexes):
         new_stock = Stocks(stock, prices, time, close, var, diff, index)
         realtime.append(new_stock)
-        print(new_stock.index, new_stock.stock)
+        print(new_stock)

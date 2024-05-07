@@ -1,7 +1,7 @@
 import tkinter as tk
-from model.wallet_manager import wallet
 
 realtime = []
+wallet = []
 
 
 class Stocks:
@@ -16,7 +16,7 @@ class Stocks:
         self.index = index
 
     def __str__(self):
-        return f'Cargando {self.stock} at {self.time}'
+        return f'Loading {self.stock} at {self.time}'
 
 
 class StocksBuy(Stocks):
@@ -31,8 +31,8 @@ class StocksBuy(Stocks):
         self.accountcharge = (buyprice * qty) + expense
 
     def __str__(self):
-        return (f'Compra de {self.qty} acciones de {self.stock} a un precio de {self.buyprice} por un valor en cuenta '
-                f'despues de gastos de {self.accountcharge}')
+        return (f'Buy of {self.qty} stocks of {self.stock} with a price of {self.buyprice} for a total value with '
+                f'expenses of {self.accountcharge}')
 
     def calcular_tobin(self):
         if self.tobin:
@@ -40,7 +40,6 @@ class StocksBuy(Stocks):
 
     @staticmethod
     def add_stock_to_wallet(app):
-        print('Miau')
         try:
             stock_position = realtime[app.option_control.get()]
             buy = StocksBuy(stock=stock_position.stock,
@@ -53,6 +52,7 @@ class StocksBuy(Stocks):
                 buy.calcular_tobin()
 
             wallet.append(buy)
+            print(buy)
             app.show_pop_up_buy()
         except tk.TclError:
             app.show_pop_up_error()
@@ -66,4 +66,6 @@ class StocksBuy(Stocks):
             wallet.pop(delete_wallet)
             app.show_pop_up_sell()
         except IndexError:
+            app.show_pop_up_error()
+        except tk.TclError:
             app.show_pop_up_error()

@@ -3,19 +3,14 @@ import tkinter as tk
 import time
 from tkinter import ttk, filedialog
 
-
 from PIL import Image, ImageTk
 
 from controller.realtime import urlcontent, scrapurl
 from resources.constants import TITLE, URL, PATH_ERROR_IMAGE
-from controller.stocks import realtime, StocksBuy
-from model.wallet_manager import wallet, upload_wallet, save_wallet
+from controller.stocks import realtime, StocksBuy, wallet
+from model.wallet_manager import upload_wallet, save_wallet
 
 
-# TO DO:
-# Pintar el balance ,calculandolo antes de insertarlo en la tabla ttk del wallet.
-# Aniadir un indice al tiempo real para la compra.
-# Crear un popup error en caso de salirme del rango de la lista de compra
 class AppUi(tk.Tk):
 
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk",
@@ -37,7 +32,7 @@ class AppUi(tk.Tk):
 
         self.option = tk.StringVar(value='sell')
         self.refresh_var_control = tk.IntVar(value=20)
-        self.clock = tk.Label(superior_frame, text='')
+        self.clock = tk.Label(option_frame, text='')
         self.option_control = tk.IntVar()
         self.qty_control = tk.IntVar()
         self.expense_control = tk.DoubleVar()
@@ -63,8 +58,8 @@ class AppUi(tk.Tk):
         # Creating File menu
 
         file_menu = tk.Menu(menu_bar, tearoff=False)
-        file_menu.add_command(label='Load Wallet',command=self.open_file)
-        file_menu.add_command(label='Save Wallet',command=self.save_file)
+        file_menu.add_command(label='Load Wallet', command=self.open_file)
+        file_menu.add_command(label='Save Wallet', command=self.save_file)
         file_menu.add_separator()
         file_menu.add_command(label='Exit', command=self.quit)
 
@@ -84,7 +79,7 @@ class AppUi(tk.Tk):
 
         # Create the clock label
 
-        self.clock.grid(row=0, column=1, columnspan=1)
+        self.clock.pack()
 
         # Create the option frame and sell/buy
 
@@ -141,12 +136,12 @@ class AppUi(tk.Tk):
         label_info_slide.pack()
 
     def clock_refresh(self):
-        self.clock.config(text=time.strftime('\t%H:%M:%S'), font=('Terminal', 25))
+        self.clock.config(text=time.strftime('%H:%M:%S\n'), font=('Terminal', 25))
         self.after(1000, self.clock_refresh)
 
     def conn_refresh(self, value):
         self.refresh_var_control.set(value)
-        print(self.refresh_var_control.get())
+        print(f'Refreshing in {self.refresh_var_control.get()} seconds.')
 
     def show_pop_up_sell(self):
         pop_up_sell = tk.Toplevel(self)
@@ -210,7 +205,7 @@ class AppUi(tk.Tk):
         for stock in realtime:
             realtime_tabular.insert('', 'end', values=(stock.index, stock.stock, stock.realtime_price, stock.time,
                                                        stock.var, stock.close, stock.more_or_less))
-        print('Actualizando tiempo real cada {} segundos'.format(self.refresh_var_control.get()))
+        print('Refreshing in {} seconds'.format(self.refresh_var_control.get()))
 
         self.after(self.refresh_var_control.get() * 1000, func=self.show_market_data)
 
@@ -250,10 +245,14 @@ class AppUi(tk.Tk):
         popup_error_entry.title('Error')
         popup_error_entry.geometry('600x450')
 
-        if os.path.exists(PATH_ERROR_IMAGE):
-            image = Image.open(PATH_ERROR_IMAGE)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        img_path = os.path.join(current_dir, PATH_ERROR_IMAGE)
+        print(img_path)
+        if os.path.exists(img_path):
+            image = Image.open(img_path)
             image_tk = ImageTk.PhotoImage(image)
             image_label = tk.Label(popup_error_entry, image=image_tk, anchor=tk.CENTER)
+            image_label.image = image_tk
             image_label.pack()
 
         else:
@@ -293,24 +292,32 @@ class AppUi(tk.Tk):
         boton_cerrar = tk.Button(popup_error_entry, text='OK', command=popup_error_entry.destroy)
         boton_cerrar.pack()
 
-
     def open_file(self):
 
-        file = filedialog.askopenfile('r',filetypes=[('CSV files','*.csv')])
-        upload_wallet(file=file)
+        try:
+            file = filedialog.askopenfile('r', filetypes=[('CSV files', '*.csv')])
+            print(file.name)
+            load_window = tk.Toplevel(self)
+            load_window.title('Loading wallet...')
+            load_window.geometry('270x120')
+            load_label = tk.Label(load_window, text='Wallet Loaded Succesfully\n')
+            load_button = tk.Button(load_window, text='Ok', command=load_window.destroy)
+            load_label.pack()
+            load_button.pack()
+            upload_wallet(file_name=file.name)
+        except AttributeError:
+            print('No selected file')
 
     def save_file(self):
         save_window = tk.Toplevel(self)
         save_window.title('Guardado')
-        save_window.geometry('400x350')
-        save_label = tk.Label(save_window, text='\n Do you want to save your wallet?\nWith which name?\n')
+        save_window.geometry('450x250')
+        save_label = tk.Label(save_window, text='\n Do you want to save your wallet?\nWith which '
+                                                'name?\n\nWARNING!\nIf you save a'
+                                                'wallet,\n with the same name than an existing wallet it will overwrite'
+                                                'it\n!')
         save_entry = tk.Entry(save_window)
         save_label.pack()
         save_button = tk.Button(save_window, text='Ok', command=lambda: save_wallet(save_entry.get()))
         save_entry.pack()
         save_button.pack()
-
-
-
-        
-        
