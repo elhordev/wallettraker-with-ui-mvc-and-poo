@@ -368,7 +368,7 @@ class AppUi(tk.Tk):
         add_close_top_level_button.pack()
 
     def add_alert_pop_up_bellow(self):
-        direction = 'bellow'
+        direction = 'below'
 
         add_alert_window_bellow = tk.Toplevel(self)
         add_alert_window_bellow.title('Add Alert')

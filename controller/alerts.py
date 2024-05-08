@@ -34,16 +34,16 @@ class Alerts:
             print('There are alerts')
             for alert in self.alerts:
                 for stock in realtime:
-                    if alert.stock == stock.stock and alert.direction == 'below' and stock.realtime_price >= alert.price:
+                    if alert.stock == stock.stock and alert.direction == 'above' and stock.realtime_price >= alert.price:
 
-                        alert_text = f'{stock.stock} is now below {alert.price}'
+                        alert_text = f'{stock.stock} is now above {alert.price}'
                         print(alert_text)
                         alerts_to_delete.append(alert)
                         print('PopUp 1 Send')
                         AppUi.pop_up_alerts(alert_text)
-                    elif alert.stock == stock.stock and alert.direction == 'above' and stock.realtime_price <= alert.price:
+                    elif alert.stock == stock.stock and alert.direction == 'below' and stock.realtime_price <= alert.price:
 
-                        alert_text_2 = f'{stock.stock} is now above {alert.price}'
+                        alert_text_2 = f'{stock.stock} is now below {alert.price}'
                         print(alert_text_2)
                         alerts_to_delete.append(alert)
                         print('PopUp 2 send')
