@@ -9,8 +9,11 @@ from controller.realtime import urlcontent, scrapurl
 from resources.constants import TITLE, URL, PATH_ERROR_IMAGE
 from controller.stocks import realtime, StocksBuy, wallet
 from model.wallet_manager import upload_wallet, save_wallet
+from controller.alerts import Alerts
 
 
+# To do: Add colors to the alarm window depend on if below or above
+# Delete alarms popup
 class AppUi(tk.Tk):
 
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk",
@@ -44,13 +47,14 @@ class AppUi(tk.Tk):
         self.entry_price = tk.Entry(option_frame, textvariable=self.price_control)
         self.option_radio_tobin = tk.Checkbutton(option_frame, text='Tobin', font=('Terminal', 16),
                                                  variable=self.tobin_option)
+
         # Initializing functions on the instance.
 
         self.button_color()
         self.show_market_data()
         self.show_wallet_data()
         self.clock_refresh()
-
+        self.check_alerts()
         # Creating MenuBar
 
         menu_bar = tk.Menu(self)
@@ -66,6 +70,21 @@ class AppUi(tk.Tk):
         # Add File menu to Menu Bar
 
         menu_bar.add_cascade(label='File', menu=file_menu)
+
+        # Creating Alert menu
+
+        alert_menu = tk.Menu(menu_bar, tearoff=False)
+        add_alert_menu = tk.Menu(alert_menu, tearoff=False)
+        add_alert_menu.add_command(label='Descendent Price', command=self.add_alert_pop_up_bellow)
+        add_alert_menu.add_command(label='Ascendent Price', command=self.add_alert_pop_up_above)
+        alert_menu.add_cascade(label='Add Alert', menu=add_alert_menu)
+        alert_menu.add_command(label='Show Alerts', command=self.show_alerts_pop_up)
+        alert_menu.add_command(label='Delete Alerts')
+        alert_menu.add_command(label='Configure Alerts')
+
+        # Add Alert menu to Menu Bar
+
+        menu_bar.add_cascade(label='Alerts', menu=alert_menu)
         self.config(menu=menu_bar)
 
         # Creating the frame for the label and the clock
@@ -190,7 +209,7 @@ class AppUi(tk.Tk):
         # Creamos tabla.
         self.show_tiempo_real()
 
-        columns = ['Index', 'Stock', 'Price', 'Time', 'Var', 'Close', 'Difference']
+        columns = ['Index', 'Stock', 'Price', 'Time', 'Variation', 'Close', 'Difference']
         realtime_tabular = ttk.Treeview(self, height=35)
         realtime_tabular.grid(row=1, column=0)
         realtime_tabular['columns'] = columns
@@ -204,7 +223,7 @@ class AppUi(tk.Tk):
         realtime_tabular.column('#0', width=0)
         for stock in realtime:
             realtime_tabular.insert('', 'end', values=(stock.index, stock.stock, stock.realtime_price, stock.time,
-                                                       stock.var, stock.close, stock.more_or_less))
+                                                       stock.close, stock.var, stock.more_or_less))
         print('Refreshing in {} seconds'.format(self.refresh_var_control.get()))
 
         self.after(self.refresh_var_control.get() * 1000, func=self.show_market_data)
@@ -219,7 +238,7 @@ class AppUi(tk.Tk):
         label_wallet = tk.Label(self, text='Wallet Personal', font=('Terminal', 20))
         label_wallet.grid(row=2, column=0)
 
-        columns = ['Index', 'Stock', 'Buy Price', 'Qty', 'Expense', 'Tobin', 'Balance', 'Account Charge']
+        columns = ['Index', 'Stock', 'Buy Price', 'Quantity', 'Expense', 'Tobin', 'Balance', 'Account Charge']
         wallet_tabular['columns'] = columns
         wallet_tabular.column('#0', width=0)
         for col in columns:
@@ -321,3 +340,82 @@ class AppUi(tk.Tk):
         save_button = tk.Button(save_window, text='Ok', command=lambda: save_wallet(save_entry.get()))
         save_entry.pack()
         save_button.pack()
+
+    def add_alert_pop_up_above(self):
+        direction = 'above'
+
+        add_alert_window_above = tk.Toplevel(self)
+        add_alert_window_above.title('Add Alert')
+        add_alert_window_above.geometry('450x250')
+        add_alert_label_above = tk.Label(add_alert_window_above, text='If the stock rises alert:\n')
+        add_alert_index_entry = tk.Entry(add_alert_window_above)
+        add_alert_index_entry.insert(0, 'Index')
+        add_alert_price_entry = tk.Entry(add_alert_window_above)
+        add_alert_price_entry.insert(0, 'Price')
+
+        add_alert_button_above = tk.Button(add_alert_window_above, text='Create Alert',
+                                           command=lambda: Alerts.add_alert(index=int(add_alert_index_entry.get()),
+                                                                            price=float(add_alert_price_entry.get()),
+                                                                            direction=direction))
+
+        add_close_top_level_button = tk.Button(add_alert_window_above, text='Exit',
+                                               command=add_alert_window_above.destroy)
+
+        add_alert_label_above.pack()
+        add_alert_index_entry.pack()
+        add_alert_price_entry.pack()
+        add_alert_button_above.pack()
+        add_close_top_level_button.pack()
+
+    def add_alert_pop_up_bellow(self):
+        direction = 'bellow'
+
+        add_alert_window_bellow = tk.Toplevel(self)
+        add_alert_window_bellow.title('Add Alert')
+        add_alert_window_bellow.geometry('450x250')
+        add_alert_label_above = tk.Label(add_alert_window_bellow, text='If the stock decreases alert:\n')
+        add_alert_index_entry = tk.Entry(add_alert_window_bellow)
+        add_alert_index_entry.insert(0, 'Index')
+        add_alert_price_entry = tk.Entry(add_alert_window_bellow)
+        add_alert_price_entry.insert(0, 'Price')
+
+        add_alert_button_bellow = tk.Button(add_alert_window_bellow, text='Create Alert',
+                                            command=lambda: Alerts.add_alert(index=int(add_alert_index_entry.get()),
+                                                                             price=float(add_alert_price_entry.get()),
+                                                                             direction=direction))
+        add_close_top_level_button = tk.Button(add_alert_window_bellow, text='Exit',
+                                               command=add_alert_window_bellow.destroy)
+
+        add_alert_label_above.pack()
+        add_alert_index_entry.pack()
+        add_alert_price_entry.pack()
+        add_alert_button_bellow.pack()
+        add_close_top_level_button.pack()
+
+    def show_alerts_pop_up(self):
+
+        show_alerts = tk.Toplevel(self)
+        show_alerts.title('Alerts')
+        show_alerts.geometry('400x300')
+        for alert in Alerts.alerts:
+            alert_label = tk.Label(show_alerts, text=f'If {alert.stock} {alert.direction} from {alert.price}€\n')
+            alert_label.pack()
+
+        show_alerts_button = tk.Button(show_alerts, text='Close', command=show_alerts.destroy)
+        show_alerts_button.pack()
+
+    def check_alerts(self):
+        print('Checking Alerts...')
+        Alerts.check_alerts(Alerts, self)
+        self.after(self.refresh_var_control.get() * 1000, func=self.check_alerts)
+
+    def pop_up_alerts(self, alert_info):
+        pop_up_alert = tk.Toplevel(self)
+        pop_up_alert.geometry('200x150')
+        pop_up_alert.title('ALERT!!')
+
+        pop_up_alert_label = tk.Label(pop_up_alert, text=alert_info)
+        pop_up_alert_button = tk.Button(pop_up_alert, text='Close', command=pop_up_alert.destroy)
+
+        pop_up_alert_label.pack()
+        pop_up_alert_button.pack()
