@@ -1,6 +1,6 @@
-#Logica de scrapp y filtrado y creacion de lista de objetos de realtime.
-#Con la funcion url content, descargamos el codigo HTML de la pagina, luego con la funcion scrapurl, filtramos y
-#limpiamos todas las variables de saltos de lineas y tabulaciones, para posterior mente instanciar los objetos.
+# Logica de scrapp y filtrado y creacion de lista de objetos de realtime.
+# Con la funcion url content, descargamos el codigo HTML de la pagina, luego con la funcion scrapurl, filtramos y
+# limpiamos todas las variables de saltos de lineas y tabulaciones, para posterior mente instanciar los objetos.
 
 
 import requests

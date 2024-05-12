@@ -13,7 +13,7 @@ from controller.alerts import Alerts
 
 
 # To do: Add colors to the alarm window depend on if below or above
-# Delete alarms popup
+# Add config popup metbod
 class AppUi(tk.Tk):
 
     def __init__(self, screenName: str | None = None, baseName: str | None = None, className: str = "Tk",
@@ -30,8 +30,8 @@ class AppUi(tk.Tk):
         superior_frame = tk.Frame(self)
         option_frame = tk.Frame(self)
         # Create control variables.
-        self.execute_button = tk.Button(option_frame, text='Ejecutar', font=('Terminal', 14), bg='green',
-                                        command=None)
+        self.execute_button = tk.Button(option_frame, text='Execute', font=('Terminal', 14), bg='green',
+                                        command='')
 
         self.option = tk.StringVar(value='sell')
         self.refresh_var_control = tk.IntVar(value=20)
@@ -224,7 +224,7 @@ class AppUi(tk.Tk):
         for stock in realtime:
             realtime_tabular.insert('', 'end', values=(stock.index, stock.stock, stock.realtime_price, stock.time,
                                                        stock.close, stock.var, stock.more_or_less))
-        print('Refreshing in {} seconds'.format(self.refresh_var_control.get()))
+        print('\nRefreshing in {} seconds\n'.format(self.refresh_var_control.get()))
 
         self.after(self.refresh_var_control.get() * 1000, func=self.show_market_data)
 
@@ -344,10 +344,10 @@ class AppUi(tk.Tk):
     def add_alert_pop_up_above(self):
         direction = 'above'
 
-        add_alert_window_above = tk.Toplevel(self)
+        add_alert_window_above = tk.Toplevel(self, background='green')
         add_alert_window_above.title('Add Alert')
         add_alert_window_above.geometry('450x250')
-        add_alert_label_above = tk.Label(add_alert_window_above, text='If the stock rises alert:\n')
+        add_alert_label_above = tk.Label(add_alert_window_above, text='If the stock rises alert:\n', background='green')
         add_alert_index_entry = tk.Entry(add_alert_window_above)
         add_alert_index_entry.insert(0, 'Index')
         add_alert_price_entry = tk.Entry(add_alert_window_above)
@@ -370,10 +370,11 @@ class AppUi(tk.Tk):
     def add_alert_pop_up_bellow(self):
         direction = 'below'
 
-        add_alert_window_bellow = tk.Toplevel(self)
+        add_alert_window_bellow = tk.Toplevel(self, background='red')
         add_alert_window_bellow.title('Add Alert')
         add_alert_window_bellow.geometry('450x250')
-        add_alert_label_above = tk.Label(add_alert_window_bellow, text='If the stock decreases alert:\n')
+        add_alert_label_above = tk.Label(add_alert_window_bellow, text='If the stock decreases alert:\n',
+                                         background='red')
         add_alert_index_entry = tk.Entry(add_alert_window_bellow)
         add_alert_index_entry.insert(0, 'Index')
         add_alert_price_entry = tk.Entry(add_alert_window_bellow)
@@ -393,14 +394,17 @@ class AppUi(tk.Tk):
         add_close_top_level_button.pack()
 
     def show_alerts_pop_up(self):
-
         show_alerts = tk.Toplevel(self)
         show_alerts.title('Alerts')
         show_alerts.geometry('400x300')
-        for alert in Alerts.alerts:
-            alert_label = tk.Label(show_alerts, text=f'If {alert.stock} {alert.direction} from {alert.price}€\n')
-            alert_label.pack()
-
+        if Alerts.alerts:
+            for i, alert in enumerate(Alerts.alerts):
+                alert_label = tk.Label(show_alerts,
+                                       text=f'{i}. If {alert.stock} {alert.direction} from {alert.price}€\n')
+                alert_label.pack()
+        else:
+            no_alerts_label = tk.Label(show_alerts, text='No alerts to show.')
+            no_alerts_label.pack()
         show_alerts_button = tk.Button(show_alerts, text='Close', command=show_alerts.destroy)
         show_alerts_button.pack()
 
@@ -409,13 +413,20 @@ class AppUi(tk.Tk):
         Alerts.check_alerts(Alerts, self)
         self.after(self.refresh_var_control.get() * 1000, func=self.check_alerts)
 
-    def pop_up_alerts(self, alert_info):
+    def pop_up_alerts(self, alert_info, alert_direction):
         pop_up_alert = tk.Toplevel(self)
-        pop_up_alert.geometry('200x150')
+        pop_up_alert.geometry('300x100')
         pop_up_alert.title('ALERT!!')
 
         pop_up_alert_label = tk.Label(pop_up_alert, text=alert_info)
         pop_up_alert_button = tk.Button(pop_up_alert, text='Close', command=pop_up_alert.destroy)
+        if alert_direction == 'above':
+            pop_up_alert.config(background='green')
+            pop_up_alert_label.config(background='green')
+
+        else:
+            pop_up_alert.config(background='red')
+            pop_up_alert_label.config(background='red')
 
         pop_up_alert_label.pack()
         pop_up_alert_button.pack()
