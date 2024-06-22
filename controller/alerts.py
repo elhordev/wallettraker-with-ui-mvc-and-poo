@@ -40,8 +40,14 @@ class Alerts:
 
             print(f'{e}')
 
-    def delete_alert(self):
-        pass
+    def delete_alert(self, alert):
+
+        try:
+            self.alerts.pop(int(alert))
+            print(f'Alert deleted succesfully')
+        except tk.TclError as e:
+
+            print(f'{e}')
 
     def check_alerts(self, AppUi):
         alerts_to_delete = []
@@ -83,7 +89,7 @@ class Alerts:
         message.attach(MIMEText(self.body, 'plain'))
         server = smtplib.SMTP(self.smtp_server, self.smtp_port)
         try:
-            
+
             server.starttls()
             server.login(self.sender_email, self.password)
             text = message.as_string()

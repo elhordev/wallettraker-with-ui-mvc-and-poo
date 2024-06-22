@@ -79,8 +79,6 @@ class AppUi(tk.Tk):
         add_alert_menu.add_command(label='Ascendent Price', command=self.add_alert_pop_up_above)
         alert_menu.add_cascade(label='Add Alert', menu=add_alert_menu)
         alert_menu.add_command(label='Show Alerts', command=self.show_alerts_pop_up)
-        alert_menu.add_command(label='Delete Alerts')
-        alert_menu.add_command(label='Configure Alerts')
 
         # Add Alert menu to Menu Bar
 
@@ -394,6 +392,7 @@ class AppUi(tk.Tk):
         add_close_top_level_button.pack()
 
     def show_alerts_pop_up(self):
+
         show_alerts = tk.Toplevel(self)
         show_alerts.title('Alerts')
         show_alerts.geometry('400x300')
@@ -402,9 +401,12 @@ class AppUi(tk.Tk):
                 alert_label = tk.Label(show_alerts,
                                        text=f'{i}. If {alert.stock} {alert.direction} from {alert.price}€\n')
                 alert_label.pack()
+            delete_alerts = tk.Button(show_alerts, text='Delete Alert', command=self.pop_up_delete_alert)
+            delete_alerts.pack()
         else:
             no_alerts_label = tk.Label(show_alerts, text='No alerts to show.')
             no_alerts_label.pack()
+
         show_alerts_button = tk.Button(show_alerts, text='Close', command=show_alerts.destroy)
         show_alerts_button.pack()
 
@@ -414,6 +416,7 @@ class AppUi(tk.Tk):
         self.after(self.refresh_var_control.get() * 1000, func=self.check_alerts)
 
     def pop_up_alerts(self, alert_info, alert_direction):
+
         pop_up_alert = tk.Toplevel(self)
         pop_up_alert.geometry('300x100')
         pop_up_alert.title('ALERT!!')
@@ -430,3 +433,28 @@ class AppUi(tk.Tk):
 
         pop_up_alert_label.pack()
         pop_up_alert_button.pack()
+
+    def pop_up_delete_alert(self):
+        pop_up_delete_alert = tk.Toplevel(self)
+        pop_up_delete_alert.geometry('300x300')
+        pop_up_delete_alert.title('Delete Alert')
+
+        if Alerts.alerts:
+            for i, alert in enumerate(Alerts.alerts):
+                alert_label = tk.Label(pop_up_delete_alert,
+                                       text=f'{i}. If {alert.stock} {alert.direction} from {alert.price}€\n')
+                alert_label.pack()
+
+            delete_alert_label = tk.Label(pop_up_delete_alert, text='Which alert do you want to delete ?\n')
+            delete_alert_label.pack()
+
+            delete_alert_entry = tk.Entry(pop_up_delete_alert)
+            delete_alert_entry.pack()
+
+            delete_alert_button = tk.Button(pop_up_delete_alert, text='Delete',
+                                            command=lambda: Alerts.delete_alert(Alerts, delete_alert_entry.get()))
+            delete_alert_button.pack()
+
+        else:
+            no_alerts_label = tk.Label(pop_up_delete_alert, text='No alerts to show.')
+            no_alerts_label.pack()
